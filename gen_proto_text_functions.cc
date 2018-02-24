@@ -24,21 +24,23 @@ limitations under the License.
 
 namespace prototext {
 
+class CrashOnErrorCollector
+    : public google::protobuf::compiler::MultiFileErrorCollector {
+        public:
+            ~CrashOnErrorCollector() {}
+
+            void AddError(const string& filename, int line, int column,
+                    const string& message) {
+                std::cerr << "Unexpected error at " << filename << "@" << line << ":"
+                    << column << " - " << message << std::endl;
+            }
+};
+
 const char* kProtobufInt64Typename = "::google::protobuf::int64";
 const char* kProtobufUint64Typename = "::google::protobuf::uint64";
 
 
 static const char kTensorFlowHeaderPrefix[] = "";
-
-static const char kPlaceholderFile[] =
-    "placeholder.txt";
-
-bool IsPlaceholderFile(const char* s) {
-  std::string ph(kPlaceholderFile);
-  std::string str(s);
-  return str.size() >= strlen(kPlaceholderFile) &&
-         ph == str.substr(str.size() - ph.size());
-}
 
 // Main program to take input protos and write output pb_text source files that
 // contain generated proto text input and output functions.
@@ -58,49 +60,39 @@ bool IsPlaceholderFile(const char* s) {
 //
 // This is meant to be invoked by a genrule. See BUILD for more information.
 int MainImpl(int argc, char** argv) {
-    if (argc < 4) {
-        std::cerr << "Pass output path, relative path, and at least proto file\n";
-        return -1;
-    }
-
-    const std::string output_root = argv[1];
-    const std::string output_relative_path = kTensorFlowHeaderPrefix + std::string(argv[2]);
-
-    std::string src_relative_path;
-    bool has_placeholder = false;
-    for (int i = 3; i < argc; ++i) {
-        if (IsPlaceholderFile(argv[i])) {
-            const std::string s(argv[i]);
-            src_relative_path = s.substr(0, s.size() - strlen(kPlaceholderFile));
-            has_placeholder = true;
-        }
-    }
-    if (!has_placeholder) {
-        std::cerr << kPlaceholderFile << " must be passed";
+    if (argc < 2) {
+        std::cerr << "Pass file path, at least proto file\n";
         return -1;
     }
 
     google::protobuf::compiler::DiskSourceTree source_tree;
 
-    source_tree.MapPath("", src_relative_path.empty() ? "." : src_relative_path);
+    source_tree.MapPath("", ".");
+    CrashOnErrorCollector collector;
     google::protobuf::compiler::Importer importer(&source_tree,
-            NULL);
+            &collector);
 
-    for (int i = 3; i < argc; i++) {
-        if (IsPlaceholderFile(argv[i])) continue;
-        const std::string proto_path = std::string(argv[i]).substr(src_relative_path.size());
+    for (int i = 1; i < argc; i++) {
+        const std::string proto_path = std::string(argv[i]);
+
+        std::cerr << "proto path: " << proto_path << std::endl;
 
         const google::protobuf::FileDescriptor* fd =
             importer.Import(proto_path);
 
         const int index = proto_path.find_last_of(".");
         std::string proto_path_no_suffix = proto_path.substr(0, index);
+        std::cerr << "proto path no suffix: " << proto_path_no_suffix << std::endl;
 
-        proto_path_no_suffix =
-            proto_path_no_suffix.substr(output_relative_path.size());
+        //proto_path_no_suffix =
+        //    proto_path_no_suffix.substr(output_relative_path.size());
+        std::cerr << "proto path no suffix: " << proto_path_no_suffix << std::endl;
 
+        std::cerr << "Not null? = " << (fd == NULL) << std::endl;
         const auto code =
             prototext::GetProtoTextFunctionCode(*fd, kTensorFlowHeaderPrefix);
+
+        std::cerr << "code generated successfully" << std::endl;
 
         // Three passes, one for each output file.
         for (int pass = 0; pass < 3; ++pass) {
@@ -117,7 +109,9 @@ int MainImpl(int argc, char** argv) {
                 data = code.cc;
             }
 
-            const std::string path = output_root + "/" + proto_path_no_suffix + suffix;
+            //const std::string path = output_root + "/" + proto_path_no_suffix + suffix;
+            const std::string path = proto_path_no_suffix + suffix;
+            std::cerr << "output path: " << path << std::endl;
             FILE* f = fopen(path.c_str(), "w");
             if (fwrite(data.c_str(), 1, data.size(), f) != data.size()) {
                 return -1;
