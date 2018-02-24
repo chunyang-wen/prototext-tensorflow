@@ -42,6 +42,6 @@ function bbbb() {
 
 export -f bbbb
 
-find . -name ".proto" -exec bash -c 'bbbb "$0"' {} \;
+find . -name "*.proto" -exec bash -c 'bbbb "$0"' {} \;
 
 ```
