@@ -99,13 +99,13 @@ int MainImpl(int argc, char** argv) {
             std::string suffix;
             std::string data;
             if (pass == 0) {
-                suffix = ".pb.h";
+                suffix = ".pb_text.h";
                 data = code.header;
             } else if (pass == 1) {
-                suffix = ".pb-impl.h";
+                suffix = ".pb_text-impl.h";
                 data = code.header_impl;
             } else {
-                suffix = ".pb.cc";
+                suffix = ".pb_text.cc";
                 data = code.cc;
             }
 

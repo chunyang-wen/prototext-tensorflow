@@ -32,9 +32,7 @@ cd build && cmake ..
 
 ### Generate tensorflow pb_text
 
-Write a bash script, such as `pb.sh` with following content:
-
-```bash
+```
 # cd to the home to tensorflow
 
 function bbbb() {
