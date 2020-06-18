@@ -6,6 +6,12 @@ It is bundled with Tensorflow so tightly. This repo extracts essential code.
 
 You have to install protobuf and then change the locations in CMakeLists.txt
 
+On Mac:
+
+```bash
+brew install automake libtool
+```
+
 ```bash
 git clone https://github.com/google/protobuf
 # cd to protobuf directory
@@ -41,6 +47,11 @@ function bbbb() {
     # to remove ./
     file=${file:2}
     ${cmd} ${file}
+
+    cmd="/path/to/protoc"
+    SRC_DIR="./"
+    DST_DIR=`dirname ${file}`
+    ${cmd} -I=$SRC_DIR --cpp_out="." ${file}
 }
 
 export -f bbbb
